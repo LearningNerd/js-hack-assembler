@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>JavaScript Assembler for NAND2Tetris Hack Computer</title>
+	<link rel="stylesheet" type="text/css" href="style.css">	
+  </head>
+  <body>
+  <h1>JavaScript Assembler for NAND2Tetris Hack Computer</h1>
+  <p>This is a browser-based assembler written in JavaScript! It takes assembly language and spits out machine code in .hack files to run on the Hack computer for the <a href="http://nand2tetris.org/">NAND2Tetris course</a>.</p>
+  <p><a href="https://github.com/LearningNerd/js-hack-assembler">Check out the code on GitHub here</a>. Initial code for writing to and downloading a file with JavaScript via <a href="http://jsfiddle.net/UselessCode/qm5AG/">this JSFiddle by UselessCode</a>.</p>
+	<textarea class="textbox" id="textbox">Paste Hack assembly code here</textarea>
+	<p>
+		<button id="create">Assemble!</button>
+		<a download="prog.hack" id="downloadlink" style="display:none;color:#333;"><button>Click to Download .hack file!</button></a>
+	</p>
+  
+	<script type="text/javascript" src="assembler.js"></script>
+  
+  </body>
+</html>
+
