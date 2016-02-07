@@ -5,23 +5,19 @@
 		
 		// run through the assembly code one line at a time
 		var instructionArray = asmProgram.split('\n');
-		instructionArray.forEach( function (instruction) {
+		instructionArray.forEach( function (instruction) {		
 			instruction = removeWhitespace(instruction);
-			console.log(instruction);
 			instruction = removeComments(instruction);			
-			console.log(instruction);
+			// if this line was empty space or a comment, skip it
+			if (instruction === '') {
+				return;
+			}
 			if (commandType(instruction) === 'A') {
-				console.log('A INSTRUCTION!');
-				console.log(instruction);
 				// convert A-instructions to binary representation
 				assemblerOutput += getBinary16( getSymbol(instruction) ) + '\n';				
 			} else if (commandType(instruction) === 'C') {
-				console.log('C INSTRUCTION!');
-				console.log(instruction);
 				// convert C-instructions to binary representation
 				assemblerOutput += getCInstructMachineCode( operationFields(instruction) ) + '\n';
-				console.log("assembler output: ");
-				console.log(assemblerOutput);
 			}
 		});			
 
@@ -72,8 +68,6 @@
 				}
 				
 			}
-			console.log("fields: ");
-			console.log(fields);
 			return fields;
 		}
 						
@@ -147,12 +141,6 @@
 			var destCode = dest(fields.dest);
 			var compCode = comp(fields.comp);
 			var jumpCode = jump(fields.jump);
-			console.log("comp: ");
-			console.log(compCode);
-			console.log("dest: ");
-			console.log(destCode);
-			console.log("jump: ");
-			console.log(jumpCode);
 			// append complete C-instruction machine code as a line in the assembler's output string
 			return '111' + compCode + destCode + jumpCode;
 		}
