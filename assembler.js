@@ -2,25 +2,56 @@
 	// VERSION 1: for .asm files with NO symbols or labels, only constants
 	function assemble (asmProgram) {		
 		var assemblerOutput = '';
+		var symbolTable = new SymbolTable();
+		var ROMcounter = 0;
+		var RAMcounter = 16;
 		
-		// run through the assembly code one line at a time
+		// split program into an array of instructions, one per line
 		var instructionArray = asmProgram.split('\n');
-		instructionArray.forEach( function (instruction) {		
+		
+		// first pass identifies labels, adds them to symbol table
+		instructionArray.forEach( function (instruction) {								
 			instruction = removeWhitespace(instruction);
 			instruction = removeComments(instruction);			
 			// if this line was empty space or a comment, skip it
 			if (instruction === '') {
 				return;
-			}
-			if (commandType(instruction) === 'A') {
-				// convert A-instructions to binary representation
-				assemblerOutput += getBinary16( getSymbol(instruction) ) + '\n';				
+			} else if (commandType(instruction) === 'C' || commandType(instruction) === 'A') {
+				// increment counter to keep track of ROM addresses
+				ROMcounter++;
+			} else if (commandType(instruction) === 'L') {
+				// add label to symbol table with current ROM address
+				symbolTable.addEntry( getSymbol(instruction), ROMcounter );
+			}		
+		});
+		
+		// second pass identifies variables, adds them to symbol table, replaces symbols with addresses, and translates operations into machine code
+		instructionArray.forEach( function (instruction) {						
+			instruction = removeWhitespace(instruction);
+			instruction = removeComments(instruction);			
+			// if this line was a full-line comment, empty space, or a label, skip it!
+			if (instruction === '' || commandType(instruction) === 'L') {
+				return;
+			} else if (commandType(instruction) === 'A') {				
+				var AValue = getSymbol(instruction);				
+				if ( !Number.isInteger( parseInt(AValue, 10) )) {
+					// if it's a symbol (not a decimal integer), save to symbol table and get its value
+					if (!symbolTable.contains(AValue)) {
+						// if symbol isn't already in symbol table, add it and increase counter
+						symbolTable.addEntry( AValue, RAMcounter);
+						RAMcounter++;
+					}
+					// convert from symbol to address (decimal representation)
+					AValue = symbolTable.getAddress(AValue);
+				}				
+				// convert from decimal to binary representation
+				assemblerOutput += getBinary16(AValue) + '\n';		
 			} else if (commandType(instruction) === 'C') {
 				// convert C-instructions to binary representation
 				assemblerOutput += getCInstructMachineCode( operationFields(instruction) ) + '\n';
 			}
-		});			
-
+		});					
+		
 		function removeWhitespace (str) {
 			return str.replace(/\s+/g, '');
 		}
@@ -29,18 +60,24 @@
 			return str.replace(/\/\/.*$/g, '');
 		}
 		
-		// takes a command, returns A or C for instruction types. TODO: return L for labels
+		// takes a command, returns A, L or C for instruction types.
 		function commandType(str) {
 			if (str.charAt(0) === '@') {
 				return 'A';
+			} else if (str.charAt(0) === '(') {
+				return 'L';
 			} else {
 				return 'C';
 			}
 		}
 		
-		// takes an instruction string, returns decimal number of A-instruction. TODO: handle symbols and labels
+		// takes an instruction string, returns value of A-instruction or L-instruction
 		function getSymbol(str) {
-			return str.slice(1);
+			if (commandType(str) === 'A') {
+				return str.slice(1);
+			} else if (commandType(str) === 'L'){
+				return str.slice(1,-1);
+			}
 		}
 		
 		// takes an instruction string, returns object identifying its fields
@@ -158,6 +195,44 @@
 				binaryString = '0' + binaryString;
 			}
 			return binaryString;
+		}
+		
+		// maps symbols to addresses:
+		function SymbolTable() {
+			// add symbol/address pair
+			this.addEntry = function(symbol, address) {
+				this[symbol] = address;
+			};
+			
+			// check if symbol is already in the table
+			this.contains = function(symbol) {
+				if (this.hasOwnProperty(symbol)) {
+					return true;
+				} else {
+					return false;
+				}
+			};
+			
+			// return address of given symbol
+			this.getAddress = function(symbol) {
+				if (this.contains(symbol)) {
+					return this[symbol];
+				}
+			};
+			
+			// predefined symbols:
+			this['SP'] = 0;
+			this['LCL'] = 1;
+			this['ARG'] = 2;
+			this['THIS'] = 3;
+			this['THAT'] = 4;
+			this['SCREEN'] = 16384;
+			this['KBD'] = 24576;
+			
+			// predefined symbols R0-R15
+			for (var i=0;i<=15;i++) {
+				this['R'+i] = i;
+			}
 		}
 		
 		return assemblerOutput.trim();
